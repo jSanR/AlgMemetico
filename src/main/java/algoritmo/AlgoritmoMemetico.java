@@ -105,21 +105,9 @@ public class AlgoritmoMemetico {
         //Inicialización de la población de acuerdo al tamaño (tamPob)
         if(verbosityLevel>=1) System.out.println("Inicializando población y calculando fitness");
         long tiempoIni = System.nanoTime();
-        this.fitnessMejorSolucion = -1;
-        this.poblacion = new Cromosoma[tamPob];
-        this.fitnessSumadaPoblacion = 0;
-        for(int i=0; i<tamPob; i++){
-            Cromosoma cromosomaNuevo = new Cromosoma();
-            double fitnessCrom = cromosomaNuevo.getFitness();
-            this.fitnessSumadaPoblacion += fitnessCrom;
-            this.poblacion[i] = cromosomaNuevo;
-            if(fitnessCrom> this.fitnessMejorSolucion){
-                this.fitnessMejorSolucion = fitnessCrom;
-                this.mejorSolucion = cromosomaNuevo;
-                this.indiceMejorSolucion = i;
-            }
-        }
+        inicializarPoblacion();
         double fitnessPrimerMejor = this.fitnessMejorSolucion;
+        Cromosoma primerMejor = this.mejorSolucion;
         //Fitness sumado de la población anterior a la actual, inicia siendo la de la población original
         double fitnessSumadaAnterior = this.fitnessSumadaPoblacion;
         System.out.println("Población inicializada. Fitness del mejor cromosoma: " + this.fitnessMejorSolucion);
@@ -199,9 +187,28 @@ public class AlgoritmoMemetico {
         System.out.println("Fitness de la mejor solución de la población original:\t" + fitnessPrimerMejor);
         System.out.println("Fitness de la mejor solución de la población final:\t\t" + this.fitnessMejorSolucion);
         System.out.println("Fitness promedio de la población final:\t\t\t\t\t" + (this.fitnessSumadaPoblacion/this.tamPob));
-        System.out.println("Mejor solución:");
+        System.out.println("Mejor solución de la población inicial:");
+        System.out.println(primerMejor);
+        System.out.println("Mejor solución general:");
         System.out.println(this.mejorSolucion);
         return this.mejorSolucion;
+    }
+
+    public void inicializarPoblacion(){
+        this.fitnessMejorSolucion = -1;
+        this.poblacion = new Cromosoma[tamPob];
+        this.fitnessSumadaPoblacion = 0;
+        for(int i=0; i<tamPob; i++){
+            Cromosoma cromosomaNuevo = new Cromosoma();
+            double fitnessCrom = cromosomaNuevo.getFitness();
+            this.fitnessSumadaPoblacion += fitnessCrom;
+            this.poblacion[i] = cromosomaNuevo;
+            if(fitnessCrom> this.fitnessMejorSolucion){
+                this.fitnessMejorSolucion = fitnessCrom;
+                this.mejorSolucion = cromosomaNuevo;
+                this.indiceMejorSolucion = i;
+            }
+        }
     }
 
     public Cromosoma[] seleccionXRuleta(SplittableRandom genRandom){
@@ -302,6 +309,8 @@ public class AlgoritmoMemetico {
             //Empezamos por copiar el cromosoma y el arreglo de índices
             //TODO Posible optimización en el copiado de los arreglos. Considerar que son de tamaño pequeño
             int numTablas = DatosEntrada.getInstance(null).getNumTablas();
+            /*
+            //FORMA 1
             int[] arrCromMut = new int[numTablas];
             int[] indCromMut = new int[numTablas];
             int[] arrCromOrig = arrHijos[i].getCromosoma();
@@ -309,7 +318,10 @@ public class AlgoritmoMemetico {
             for(int j=0; j<numTablas; j++){
                 arrCromMut[j] = arrCromOrig[j];
                 indCromMut[j] = indCromOrig[j];
-            }
+            }*/
+            //FORMA 2
+            int[] arrCromMut = arrHijos[i].getCromosoma().clone();
+            int[] indCromMut = arrHijos[i].getIndicesTab().clone();
             //Se seleccionan dos índices aleatoriamente (pero se valida que no sean iguales)
             int indice1 = genRandom.nextInt(numTablas);
             int indice2;
@@ -369,8 +381,8 @@ public class AlgoritmoMemetico {
                 int cantSitDisp = 0;
                 for(int k=0; k<datos.getNumSitios();k++){
                     if(dispTabla[k]){
+                        indicesSitDisp[cantSitDisp] = k;
                         cantSitDisp++;
-                        indicesSitDisp[k] = k;
                     }
                 }
                 //Se elige uno de los sitios disponibles de manera aleatoria
@@ -421,4 +433,65 @@ public class AlgoritmoMemetico {
         }
         return hayNuevoMejor;
     }
+
+    public int getNumIter() {
+        return numIter;
+    }
+
+    public int getTamPob() {
+        return tamPob;
+    }
+
+    public float getPorcCromCruzados() {
+        return porcCromCruzados;
+    }
+
+    public int getCantCromCruzados() {
+        return cantCromCruzados;
+    }
+
+    public float getProbMut() {
+        return probMut;
+    }
+
+    public float getProbBusq() {
+        return probBusq;
+    }
+
+    public float getPorcHijosIngresados() {
+        return porcHijosIngresados;
+    }
+
+    public int getCantHijosIngresados() {
+        return cantHijosIngresados;
+    }
+
+    public int getCantVecinosEvaluados() {
+        return cantVecinosEvaluados;
+    }
+
+    public float getPorcIterEstancamiento() {
+        return porcIterEstancamiento;
+    }
+
+    public Cromosoma[] getPoblacion() {
+        return poblacion;
+    }
+
+    public double getFitnessSumadaPoblacion() {
+        return fitnessSumadaPoblacion;
+    }
+
+    public Cromosoma getMejorSolucion() {
+        return mejorSolucion;
+    }
+
+    public double getFitnessMejorSolucion() {
+        return fitnessMejorSolucion;
+    }
+
+    public int getIndiceMejorSolucion() {
+        return indiceMejorSolucion;
+    }
+
 }

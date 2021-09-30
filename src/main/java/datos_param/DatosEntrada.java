@@ -2,8 +2,8 @@ package datos_param;
 
 import java.io.*;
 import java.util.Arrays;
+
 import estructuras_problema.Tabla;
-import main.Main;
 
 public class DatosEntrada {
     //Esta clase contiene todos los datos de entrada del problema.
@@ -53,12 +53,13 @@ public class DatosEntrada {
         String separadorCsv = ";";
         //Obtener path del archivo de
         if(pathArchivoDatos == null)
-            path = (new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent()) + "/datos.csv";
+            path = (new File(DatosEntrada.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent()) + "/datos.csv";
         else path = pathArchivoDatos;
         File archivoDatos = new File(path);
         //Verificar que el archivo exista
         try{
-            BufferedReader csvReader = new BufferedReader(new FileReader(archivoDatos));
+            FileReader fileReader= new FileReader(archivoDatos);
+            BufferedReader csvReader = new BufferedReader(fileReader);
             //Lectura del archivo de datos
             int numTablas;
             int numSitios;
@@ -75,13 +76,11 @@ public class DatosEntrada {
             //Primera línea, datos del problema (numTab, numSit, numTotalCol, tamPromCol, overheadTransm, coefCom)
             String fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está vacío");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está vacío");
             }
             String[] datos = fila.split(separadorCsv);
             if(datos.length!=6){
-                System.err.println("ERROR: Faltan datos del problema en el archivo de datos (linea 1)");
-                System.exit(2);
+                throw new IOException("ERROR: Faltan datos del problema en el archivo de datos (linea 1)");
             }
             //Se llenan los datos
             numTablas=Integer.parseInt(datos[0]);
@@ -91,15 +90,13 @@ public class DatosEntrada {
             overheadTrans=Integer.parseInt(datos[4]);
             coefCom=Float.parseFloat(datos[5]);
             if(numTablas <= 1 || numSitios <=0 || numTotalColumnas <=0 || tamPromColumna <= 0 || overheadTrans < 0 || coefCom <0){
-                System.err.println("ERROR: Datos inválidos en la línea 1 del archivo de datos");
-                System.exit(2);
+                throw new IOException("ERROR: Datos inválidos en la línea 1 del archivo de datos");
             }
             coefProc=1-coefCom;
             //Segunda línea, se debe leer un guion que separa la siguiente sección de datos
             fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está incompleto (solamente se leyó primera línea");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está incompleto (solamente se leyó primera línea");
             }
             //Sección de información de tablas
             tablas = new Tabla[numTablas];
@@ -107,20 +104,17 @@ public class DatosEntrada {
             for(int i=0;i<numTablas;i++){
                 fila = csvReader.readLine();
                 if(fila==null){
-                    System.err.println("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (2+i));
-                    System.exit(2);
+                    throw new IOException("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (2+i));
                 }
                 datos = fila.split(separadorCsv);
                 if(datos.length!=numTotalColumnas+2 || datos[0].equals("-")){
-                    System.err.println("ERROR: Archivo de datos - Faltan datos para la tabla " + i+1 + " (linea " + (3+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: Archivo de datos - Faltan datos para la tabla " + (i+1) + " (linea " + (3+i) + ")");
                 }
                 //Datos de "cabecera" de la tabla
                 int numFilas = Integer.parseInt(datos[0]);
                 int numBytes = Integer.parseInt(datos[1]);
                 if(numFilas <=0 || numBytes <=0){
-                    System.err.println("ERROR: Archivo de datos - Datos de cabecera incorrectos para la tabla " + i+1 + " (linea " + (3+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: Archivo de datos - Datos de cabecera incorrectos para la tabla " + (i+1) + " (linea " + (3+i) + ")");
                 }
                 //Lectura de cardinalidades de la tabla
                 int[] cardColumnas = cardTablas[i];
@@ -128,8 +122,10 @@ public class DatosEntrada {
                 for (int j=0;j<numTotalColumnas;j++){
                     cardColumnas[j] = Integer.parseInt(datos[j+2]);
                     if(cardColumnas[j]<0){
-                        System.err.println("ERROR: Archivo de datos - Cardinalidad negativa para la tabla " + i+1 + " (linea " + (3+i) + ")");
-                        System.exit(2);
+                        throw new IOException("ERROR: Archivo de datos - Cardinalidad negativa para la tabla " + (i+1) + ", columna " + (j+1) + "(linea " + (3+i) + ")");
+                    }
+                    if(cardColumnas[j]>numFilas){
+                        throw new IOException("ERROR: Archivo de datos - Cardinalidad mayor a numFilas para la tabla " + (i+1) + ", columna " + (j+1) + "(linea " + (3+i) + ")");
                     }
                     if(cardColumnas[j]!=0)numColumnas++;
                 }
@@ -139,21 +135,18 @@ public class DatosEntrada {
             //Segundo guión separador
             fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas+2) + ")");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas+2) + ")");
             }
             //Sección de distribución de tablas en sitios
             distTabSit = new boolean[numTablas][numSitios];
             for(int i=0;i<numTablas;i++){
                 fila = csvReader.readLine();
                 if(fila==null){
-                    System.err.println("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (numTablas+3+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (numTablas+3+i) + ")");
                 }
                 datos = fila.split(separadorCsv);
                 if(datos.length!=numSitios || datos[0].equals("-")){
-                    System.err.println("ERROR: Archivo de datos - Faltan datos de dist. para la tabla " + i+1 + " (linea " + (numTablas+4+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: Archivo de datos - Faltan datos de dist. para la tabla " + i+1 + " (linea " + (numTablas+4+i) + ")");
                 }
                 int numSitiosDisp=0;
                 boolean[] distTabla = distTabSit[i];
@@ -167,28 +160,24 @@ public class DatosEntrada {
                 }
                 //La tabla debe existir en al menos un sitio
                 if(numSitiosDisp==0){
-                    System.err.println("ERROR: Archivo de datos - La tabla " + i+1 + " no existe en ningún sitio (linea " + (numTablas+4+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: Archivo de datos - La tabla " + i+1 + " no existe en ningún sitio (linea " + (numTablas+4+i) + ")");
                 }
             }
             //Tercer guion separador
             fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+3) + ")");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+3) + ")");
             }
             //Sección de capacidades de transmisión entre tablas
             capTrans = new int[numSitios][numSitios];
             for(int i=0;i<numSitios;i++){
                 fila = csvReader.readLine();
                 if(fila==null){
-                    System.err.println("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (numTablas*2+4+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: El archivo de datos está incompleto (solamente se leyó hasta la línea " + (numTablas*2+4+i) + ")");
                 }
                 datos = fila.split(separadorCsv);
                 if(datos.length!=numSitios || datos[0].equals("-")){
-                    System.err.println("ERROR: Archivo de datos - Faltan datos de cap. de trans. para el sitio " + i+1 + " (linea " + (numTablas*2+5+i) + ")");
-                    System.exit(2);
+                    throw new IOException("ERROR: Archivo de datos - Faltan datos de cap. de trans. para el sitio " + i+1 + " (linea " + (numTablas*2+5+i) + ")");
                 }
                 for(int j=i; j<numSitios;j++){
                     //En la diagonal de la matriz se fuerzan capacidades de trans. de 0
@@ -197,8 +186,7 @@ public class DatosEntrada {
                         int capacidad = Integer.parseInt(datos[j]);
                         //Capacidad inválida
                         if(capacidad<=0){
-                            System.err.println("ERROR: Archivo de datos - Cap. de trans. inválida para los sitios " + i+1 + " y " + j+1 + " (linea " + (numTablas*2+5+i) + ")");
-                            System.exit(2);
+                            throw new IOException("ERROR: Archivo de datos - Cap. de trans. inválida para los sitios " + i+1 + " y " + j+1 + " (linea " + (numTablas*2+5+i) + ")");
                         }
                         capTrans[i][j] = capacidad;
                         capTrans[j][i] = capacidad;
@@ -209,19 +197,16 @@ public class DatosEntrada {
             //Tercer guion separador
             fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+4) + ")");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+4) + ")");
             }
             //Sección de parámetros de ejecución del algoritmo
             fila = csvReader.readLine();
             if(fila==null){
-                System.err.println("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+5) + ")");
-                System.exit(2);
+                throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+5) + ")");
             }
             datos = fila.split(separadorCsv);
             if(datos.length!=9 || datos[0].equals("-")){
-                System.err.println("ERROR: Archivo de datos - Número incorrecto de parámetros de ejecución del algoritmo (linea " + (numTablas*2+numSitios+6) + ")");
-                System.exit(2);
+                throw new IOException("ERROR: Archivo de datos - Número incorrecto de parámetros de ejecución del algoritmo (linea " + (numTablas*2+numSitios+6) + ")");
             }
             int numIter = Integer.parseInt(datos[0]);
             int tamPob = Integer.parseInt(datos[1]);
@@ -234,8 +219,7 @@ public class DatosEntrada {
             int verbosityLevel = Integer.parseInt(datos[8]);
             if(numIter<=0 || tamPob <=0 || porcCruce >1 || probMut >1 || probBusq > 1
                     || porcHijos > 1 || cantVecinosEval <=0 || porcIterEstanc >1){
-                System.err.println("ERROR: Datos inválidos en la sección de parámetros de ejecución del algoritmo");
-                System.exit(2);
+                throw new IOException("ERROR: Datos inválidos en la sección de parámetros de ejecución del algoritmo");
             }
             paramAlg = new ParametrosAlgoritmo(numIter,tamPob,porcCruce,probMut,probBusq, porcHijos, cantVecinosEval, porcIterEstanc);
             DatosEntrada datosEntrada =
@@ -318,5 +302,9 @@ public class DatosEntrada {
                 ", paramAlg=" + paramAlg +
                 ", verbosityLevel=" + verbosityLevel +
                 '}';
+    }
+
+    public static void discardInstance(){
+        INSTANCIA=null;
     }
 }

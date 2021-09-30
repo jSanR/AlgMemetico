@@ -12,6 +12,7 @@ public class Cromosoma {
     private final int[] indicesTab;
     private double[] costProc; //Costos de procesamiento del plan de ejecución representado por el cromosoma
     private Tabla[] listaJoins;
+    private double costCom;
     private double fitness;
     private boolean fitnessCalculada;
 
@@ -180,6 +181,7 @@ public class Cromosoma {
             //Tabla1 pasa a ser el join generado entre 1 y 2
             tabla1 = this.listaJoins[i-1];
         }
+        this.costCom = costoAcum;
         return costoAcum;
     }
 
@@ -230,6 +232,15 @@ public class Cromosoma {
             if(i!= cromosoma.length-1) salida.append("=>");
         }
         salida.append("}, fitness: ").append(fitnessCalculada ? fitness : "No calculada");
+        salida.append(", Costos de proc: {");
+        for(int i=0; i<cromosoma.length-1;i++){
+            salida.append(" ").append(this.costProc[i]);
+        }
+        salida.append(" }, Costo de com: ").append(this.costCom);
         return salida.toString();
+    }
+
+    public double getCostCom() {
+        return costCom;
     }
 }

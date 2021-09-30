@@ -1,5 +1,3 @@
-package main;
-
 import algoritmo.AlgoritmoMemetico;
 import datos_param.DatosEntrada;
 import logging.MultiOutputStream;
