@@ -122,10 +122,10 @@ public class DatosEntrada {
                 for (int j=0;j<numTotalColumnas;j++){
                     cardColumnas[j] = Integer.parseInt(datos[j+2]);
                     if(cardColumnas[j]<0){
-                        throw new IOException("ERROR: Archivo de datos - Cardinalidad negativa para la tabla " + (i+1) + ", columna " + (j+1) + "(linea " + (3+i) + ")");
+                        throw new IOException("ERROR: Archivo de datos - Cardinalidad negativa para la tabla " + (i+1) + ", columna " + (j+1) + " (linea " + (3+i) + ")");
                     }
                     if(cardColumnas[j]>numFilas){
-                        throw new IOException("ERROR: Archivo de datos - Cardinalidad mayor a numFilas para la tabla " + (i+1) + ", columna " + (j+1) + "(linea " + (3+i) + ")");
+                        throw new IOException("ERROR: Archivo de datos - Cardinalidad mayor a numFilas para la tabla " + (i+1) + ", columna " + (j+1) + " (linea " + (3+i) + ")");
                     }
                     if(cardColumnas[j]!=0)numColumnas++;
                 }
