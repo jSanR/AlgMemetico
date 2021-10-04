@@ -64,5 +64,6 @@ class CromosomaTest {
         assertEquals(cromEvaluado.getListaJoins().length, datos.getNumTablas()-1);
         assertTrue(cromEvaluado.isFitnessCalculada());
         assertTrue(fitnessCalc>0);
+        //double fitnessDatos = cromEvaluado.getCostCom() + Arrays.stream(cromEvaluado.getCostProc()).sum();
     }
 }

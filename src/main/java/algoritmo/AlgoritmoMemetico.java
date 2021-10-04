@@ -6,6 +6,8 @@ import estructuras_problema.Cromosoma;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.PriorityQueue;
 import java.util.SplittableRandom;
 
 public class AlgoritmoMemetico {
@@ -24,10 +26,13 @@ public class AlgoritmoMemetico {
     private Cromosoma mejorSolucion;
     private double fitnessMejorSolucion;
     private int indiceMejorSolucion;
+    private double tiempoEjecucion; //Tiempo de ejecución en milisegundos
+    private double fitnessPromMejores10; //Fitness promedio de las 10 mejores soluciones finales
+    private double fitnessPromMejores20; //Fitness promedio de las 20 mejores soluciones finales
 
     public AlgoritmoMemetico() {
         //Se accede a los datos de entrada para copiar los parámetros de ejecución
-        ParametrosAlgoritmo param = DatosEntrada.getInstance(null).getParamAlg();
+        ParametrosAlgoritmo param = DatosEntrada.getInstance(null).getParamAlg()[0];
         this.numIter = param.getNumIter();
         this.tamPob = param.getTamPob();
         this.porcCromCruzados = param.getPorcCromCruzados();
@@ -55,7 +60,7 @@ public class AlgoritmoMemetico {
             System.exit(3);
         }
         this.cantHijosIngresados =cantIngreso;
-        this.cantVecinosEvaluados = param.getCantVecinosEval();
+        this.cantVecinosEvaluados = param.getCantVecinosEvaluados();
         this.porcIterEstancamiento = param.getPorcIterEstanc();
     }
 
@@ -94,7 +99,8 @@ public class AlgoritmoMemetico {
 
     public Cromosoma ejecutar(int verbosityLevel){
         //Verbosity level:
-        //0 o negativo: Sin mensajes de progreso del algoritmo. Solo el resultado final
+        //<0: Sin mensajes impresos de la ejecución
+        //0: Sin mensajes de progreso del algoritmo. Solo el resultado final
         //1: Mensajes de progreso del algoritmo por iteración (no se detalla el avance dentro de cada iteración)
         //2+: Mensajes de progreso del algoritmo completos (incluidos al interior de cada iteración)
         DecimalFormat df1 = new DecimalFormat("0.0000000000000");
@@ -110,8 +116,8 @@ public class AlgoritmoMemetico {
         Cromosoma primerMejor = this.mejorSolucion;
         //Fitness sumado de la población anterior a la actual, inicia siendo la de la población original
         double fitnessSumadaAnterior = this.fitnessSumadaPoblacion;
-        System.out.println("Población inicializada. Fitness del mejor cromosoma: " + this.fitnessMejorSolucion);
-        System.out.println("Inicio de optimización...");
+        if(verbosityLevel>=0) System.out.println("Población inicializada. Fitness del mejor cromosoma: " + this.fitnessMejorSolucion);
+        if(verbosityLevel>=0) System.out.println("Inicio de optimización...");
         if(verbosityLevel>=2)
             System.out.println("=".repeat(30));
         //Ahora se inician las iteraciones
@@ -175,22 +181,41 @@ public class AlgoritmoMemetico {
         //Culminada la optimización, se calcula el tiempo de ejecución
         long tiempoFin = System.nanoTime();
         double tiempoMiliseg = (tiempoFin-tiempoIni)/(1000d*1000d);
-        if(contadorEstanc==cantIterEstanc) System.out.println("Optimización terminada por estancamiento");
-        else System.out.println("Optimización concluida exitosamente");
-        System.out.println("=".repeat(15) + "RESULTADOS" + "=".repeat(15));
-        System.out.println("Parámetros de ejecución:");
-        System.out.println("numIter: " + this.numIter + "|tamPob: " + this.tamPob +
-                "|cantCromCruzados: " + this.cantCromCruzados + "|probMut: " + this.probMut +
-                "|probBusq: " + this.probBusq + "|cantVecinosEvaluados: " + this.cantVecinosEvaluados +
-                "|cantHijosIngresados: " + this.cantHijosIngresados + "|cantIterEstanc: " + cantIterEstanc);
-        System.out.println("Tiempo de ejecución: " + tiempoMiliseg + "ms");
-        System.out.println("Fitness de la mejor solución de la población original:\t" + fitnessPrimerMejor);
-        System.out.println("Fitness de la mejor solución de la población final:\t\t" + this.fitnessMejorSolucion);
-        System.out.println("Fitness promedio de la población final:\t\t\t\t\t" + (this.fitnessSumadaPoblacion/this.tamPob));
-        System.out.println("Mejor solución de la población inicial:");
-        System.out.println(primerMejor);
-        System.out.println("Mejor solución general:");
-        System.out.println(this.mejorSolucion);
+        //Se guarda el tiempo de ejecución
+        this.tiempoEjecucion = tiempoMiliseg;
+        //Se ordena la población descendentemente por fitness
+        Arrays.sort(poblacion,new ComparadorCromosomas());
+        //Se calcula el fitness promedio de las mejores 10 y 20 soluciones
+        double sumaMejoresFitness= 0;
+        this.fitnessPromMejores10=0;
+        this.fitnessPromMejores20=0;
+        for(int i=0; i<Math.min(tamPob,20);i++){
+            sumaMejoresFitness+= poblacion[i].getFitness();
+            if(i==9) fitnessPromMejores10 = sumaMejoresFitness/10;
+            if(i==19) fitnessPromMejores20 = sumaMejoresFitness/20;
+        }
+        double fitnessPeorCromosoma = poblacion[poblacion.length-1].getFitness();
+        if(verbosityLevel>=0) {
+            if (contadorEstanc == cantIterEstanc) System.out.println("Optimización terminada por estancamiento");
+            else System.out.println("Optimización concluida exitosamente");
+            System.out.println("=".repeat(15) + "RESULTADOS" + "=".repeat(15));
+            System.out.println("Parámetros de ejecución:");
+            System.out.println("numIter: " + this.numIter + "|tamPob: " + this.tamPob +
+                    "|cantCromCruzados: " + this.cantCromCruzados + "|probMut: " + this.probMut +
+                    "|probBusq: " + this.probBusq + "|cantVecinosEvaluados: " + this.cantVecinosEvaluados +
+                    "|cantHijosIngresados: " + this.cantHijosIngresados + "|cantIterEstanc: " + cantIterEstanc);
+            System.out.println("Tiempo de ejecución: " + tiempoMiliseg + "ms");
+            System.out.println("Fitness de la mejor solución de la población original:\t" + fitnessPrimerMejor);
+            System.out.println("Fitness de la mejor solución de la población final:\t\t" + this.fitnessMejorSolucion);
+            System.out.println("Fitness promedio de la población final:\t\t\t\t\t" + (this.fitnessSumadaPoblacion / this.tamPob));
+            System.out.println("Fitness promedio de las 10 mejores soluciones finales:\t" + fitnessPromMejores10);
+            System.out.println("Fitness promedio de las 20 mejores soluciones finales:\t" + fitnessPromMejores20);
+            System.out.println("Fitness del peor cromosoma de la población final:\t\t" + fitnessPeorCromosoma);
+            System.out.println("Mejor solución de la población inicial:");
+            System.out.println(primerMejor);
+            System.out.println("Mejor solución general:");
+            System.out.println(this.mejorSolucion);
+        }
         return this.mejorSolucion;
     }
 
@@ -203,7 +228,7 @@ public class AlgoritmoMemetico {
             double fitnessCrom = cromosomaNuevo.getFitness();
             this.fitnessSumadaPoblacion += fitnessCrom;
             this.poblacion[i] = cromosomaNuevo;
-            if(fitnessCrom> this.fitnessMejorSolucion){
+            if(Double.compare(fitnessCrom,this.fitnessMejorSolucion)>0){
                 this.fitnessMejorSolucion = fitnessCrom;
                 this.mejorSolucion = cromosomaNuevo;
                 this.indiceMejorSolucion = i;
@@ -423,7 +448,7 @@ public class AlgoritmoMemetico {
             //Hecho esto, se efectúa el reemplazo
             this.poblacion[indicePob] = hijoEntrante;
             //Se evalúa si se ha encontrado un nuevo mejor cromosoma
-            if(hijoEntrante.getFitness()>this.fitnessMejorSolucion){
+            if(Double.compare(hijoEntrante.getFitness(),this.fitnessMejorSolucion)>0){
                 this.mejorSolucion = hijoEntrante;
                 this.fitnessMejorSolucion = hijoEntrante.getFitness();
                 this.indiceMejorSolucion = indicePob;
@@ -494,4 +519,15 @@ public class AlgoritmoMemetico {
         return indiceMejorSolucion;
     }
 
+    public double getTiempoEjecucion() {
+        return tiempoEjecucion;
+    }
+
+    public double getFitnessPromMejores10() {
+        return fitnessPromMejores10;
+    }
+
+    public double getFitnessPromMejores20() {
+        return fitnessPromMejores20;
+    }
 }

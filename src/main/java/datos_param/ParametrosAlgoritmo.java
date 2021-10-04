@@ -7,7 +7,7 @@ public class ParametrosAlgoritmo {
     private final float probMut;
     private final float probBusq;
     private final float porcHijosIngresados; //Porcentaje de hijos a seleccionar para entrar en la población
-    private final int cantVecinosEval;
+    private final int cantVecinosEvaluados;
     private final float porcIterEstanc; //Porcentaje de iteraciones totales para las que se considera que existe estancamiento
 
     public ParametrosAlgoritmo(int numIter, int tamPob, float porcCromCruzados, float probMut, float probBusq, float porcHijosSust, int cantVecinosEval, float porcIterEstanc) {
@@ -17,7 +17,7 @@ public class ParametrosAlgoritmo {
         this.probMut = probMut;
         this.probBusq = probBusq;
         this.porcHijosIngresados = porcHijosSust;
-        this.cantVecinosEval = cantVecinosEval;
+        this.cantVecinosEvaluados = cantVecinosEval;
         this.porcIterEstanc = porcIterEstanc;
     }
 
@@ -45,8 +45,8 @@ public class ParametrosAlgoritmo {
         return porcHijosIngresados;
     }
 
-    public int getCantVecinosEval() {
-        return cantVecinosEval;
+    public int getCantVecinosEvaluados() {
+        return cantVecinosEvaluados;
     }
 
     public float getPorcIterEstanc() {
@@ -62,7 +62,7 @@ public class ParametrosAlgoritmo {
                 ", probMut=" + probMut +
                 ", probBusq=" + probBusq +
                 ", porcHijosIngresados=" + porcHijosIngresados +
-                ", cantVecinosEval=" + cantVecinosEval +
+                ", cantVecinosEval=" + cantVecinosEvaluados +
                 ", porcIterEstanc=" + porcIterEstanc +
                 '}';
     }

@@ -98,7 +98,7 @@ public class Cromosoma {
             System.err.println("ERROR: No se pudo calcular el costo de comunicación del cromosoma (lista de Joins vacía)");
             System.exit(4);
         }
-        costoTotal=(datos.getCoefProc()*Math.log(costoProc)+datos.getCoefCom()*Math.log(costoCom))/10;
+        costoTotal=(datos.getCoefProc()*Math.log(costoProc+1)+datos.getCoefCom()*Math.log(costoCom+1))/10;
         this.fitness=1/costoTotal;
         this.fitnessCalculada = true;
     }
@@ -107,12 +107,13 @@ public class Cromosoma {
         //Inicializar arreglos de costos de proc. y joins
         this.costProc = new double[datos.getNumTablas()-1];
         this.listaJoins = new Tabla[datos.getNumTablas()-1];
+        //Debug
         //Obtener estructuras necesarias para el cálculo del costo
         Tabla[] tablas = datos.getTablas();
         //Se recorrerá el arreglo del cromosoma para determinar los joins realizados
         // y calcular los costos en base a estos
         Tabla tabla1 = tablas[(this.cromosoma[0]/100)-1]; //La primera tabla del primer join es la del índice 0
-        int costAcum=0; //Suma de costos de procesamiento
+        double costAcum=0; //Suma de costos de procesamiento
         for(int i=1;i<datos.getNumTablas();i++){
             //Se obtiene la segunda tabla del join
             Tabla tabla2 = tablas[(this.cromosoma[i]/100)-1];
@@ -120,9 +121,9 @@ public class Cromosoma {
             costProc[i-1] = tabla1.getNumFilas()*tabla2.getNumFilas()*1d;
             //Se calculan las cardinalidades de todas las columnas que corresponderán al join de ambas tablas
             int[] arrCardinalidades = new int[datos.getNumTotalColumnas()];
-            int productoCard = 1; //El producto de las cardinalidades de las columnas comunes a usarse para el costo
-            int prodCardColsT1 = 1; //Producto de las cardinalidades de tabla1 para las columnas comunes
-            int prodCardColsT2 = 1; //Producto de las cardinalidades de tabla2 para las columnas comunes
+            long productoCard = 1; //El producto de las cardinalidades de las columnas comunes a usarse para el costo
+            long prodCardColsT1 = 1; //Producto de las cardinalidades de tabla1 para las columnas comunes
+            long prodCardColsT2 = 1; //Producto de las cardinalidades de tabla2 para las columnas comunes
             int contadorColumnas = 0;
             for(int j=0;j< arrCardinalidades.length;j++){
                 int cardT1 = tabla1.getCardColumnas()[j];
@@ -143,8 +144,8 @@ public class Cromosoma {
             costAcum+=costProc[i-1];
             //Se arma el resultado del join entre tabla 1 y 2 como un objeto Tabla
             //Calcular número de filas
-            int cardTuplaT1 = Math.min(prodCardColsT1,tabla1.getNumFilas());
-            int cardTuplaT2 = Math.min(prodCardColsT2,tabla2.getNumFilas());
+            int cardTuplaT1 = (int) Math.min(prodCardColsT1, tabla1.getNumFilas());
+            int cardTuplaT2 = (int) Math.min(prodCardColsT2, tabla2.getNumFilas());
             int numFilas;
             if(cardTuplaT1<cardTuplaT2) numFilas = tabla1.getNumFilas();
             else if(cardTuplaT1>cardTuplaT2) numFilas = tabla2.getNumFilas();
@@ -152,6 +153,11 @@ public class Cromosoma {
             //Se corrigen las cardinalidades (pues algunas pueden ser mayores al número de filas)
             for(int j=0;j<arrCardinalidades.length;j++){
                 if(arrCardinalidades[j]>numFilas) arrCardinalidades[j] = numFilas;
+            }
+            //Se atrapa un error
+            if(numFilas==0){
+                System.err.println("Se generó un join con número de filas igual a 0");
+                System.exit(4);
             }
             //Se crea el join como objeto Tabla
             tabla1 = new Tabla(-1, numFilas, contadorColumnas,
@@ -176,7 +182,7 @@ public class Cromosoma {
             //Si los sitios son diferentes, esto implica una transmisión entre sitios
             if(idSit1!=idSit2){
                 //La transmisión implica un overhead + el tiempo de transmisión de la tabla 1 entre los sitios
-                costoAcum+= datos.getOverheadTrans()/1000d + tabla1.getNumBytes()*1d/capTransSitios[idSit1-1][idSit2-1];
+                costoAcum+= datos.getOverheadTrans()/1000d + tabla1.getNumBytes()*1.0d/capTransSitios[idSit1-1][idSit2-1];
             }
             //Tabla1 pasa a ser el join generado entre 1 y 2
             tabla1 = this.listaJoins[i-1];
@@ -243,4 +249,6 @@ public class Cromosoma {
     public double getCostCom() {
         return costCom;
     }
+
+
 }

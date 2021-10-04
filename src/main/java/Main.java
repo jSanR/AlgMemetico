@@ -1,5 +1,6 @@
 import algoritmo.AlgoritmoMemetico;
 import datos_param.DatosEntrada;
+import datos_param.ParametrosAlgoritmo;
 import logging.MultiOutputStream;
 
 import java.io.FileNotFoundException;
@@ -10,6 +11,12 @@ import java.time.format.DateTimeFormatter;
 
 public class Main {
     public static void main(String[] args){
+        //Valores de status de salida del programa:
+        //0: Ejecución exitosa
+        //1: Salida por error en la configuración de salida y error estándar
+        //2: Salida por error en la lectura del archivo de datos de entrada
+        //3: Salida por configuración inválida de parámetros de ejecución
+        //4: Salida por error en el cálculo del fitness de un cromosoma
         //Configuración para que la salida y error estándar se copien a un archivo
         try {
             configurarSalida();
@@ -25,10 +32,10 @@ public class Main {
         else pathArchivoDatos = null;
         //Lectura de datos de entrada desde el archivo en cuestión
         DatosEntrada datos = DatosEntrada.getInstance(pathArchivoDatos);
-        //System.out.println(datos);
-        //Ejecución de algoritmo
-        AlgoritmoMemetico algMem = new AlgoritmoMemetico();
-        algMem.ejecutar(datos.getVerbosityLevel());
+
+        ejecutarAlgoritmo(datos);
+        //ejecutarAlgCalibracion(datos,5);
+        //imprimirCombParam();
     }
 
     public static void configurarSalida() throws FileNotFoundException{
@@ -46,5 +53,83 @@ public class Main {
 
         System.setOut(stdout);
         System.setErr(stderr);
+    }
+
+    public static void ejecutarAlgoritmo(DatosEntrada datos){
+        //Ejecución única del algoritmo
+        AlgoritmoMemetico algMem = new AlgoritmoMemetico();
+        algMem.ejecutar(datos.getVerbosityLevel());
+    }
+
+    public static void ejecutarAlgCalibracion(DatosEntrada datos, int cantRepeticiones){
+        //Ejecución múltiple del algoritmo bajo diferentes configuraciones de parámetros
+        ParametrosAlgoritmo[] arrParametros = datos.getParamAlg();
+        int i=1;
+        for(ParametrosAlgoritmo config: arrParametros){
+            //Se imprime la config de parámetros
+            //System.out.println("Configuracion "+i+": Numiter="+config.getNumIter()+"|TamPob="+config.getTamPob()+
+            //        "|PorcCromCruzados="+config.getPorcCromCruzados()+"|ProbMut="+config.getProbMut()+
+            //        "|ProbBusq="+config.getProbBusq()+"|PorcHijosIngresados="+config.getPorcHijosIngresados()+
+            //        "|CantVecinosEval="+config.getCantVecinosEvaluados()+"|PorcIterEstanc="+config.getPorcIterEstanc());
+            StringBuilder salida = new StringBuilder();
+            salida.append(config.getNumIter()).append(";").append(config.getTamPob()).append(";")
+                    .append(config.getPorcCromCruzados()).append(";").append(config.getProbMut())
+                    .append(";").append(config.getProbBusq()).append(";").append(config.getPorcHijosIngresados())
+                    .append(";").append(config.getCantVecinosEvaluados()).append(";")
+                    .append(config.getPorcIterEstanc()).append(";|;");
+            AlgoritmoMemetico algMem = new AlgoritmoMemetico(config.getNumIter(), config.getTamPob(), config.getPorcCromCruzados(),
+                    config.getProbMut(), config.getProbBusq(), config.getPorcHijosIngresados(), config.getCantVecinosEvaluados(),
+                    config.getPorcIterEstanc());
+            //Sumas de fitness y tiempos de ejecución
+            double sumaFitnessMejorSol= 0;
+            double sumaFitnessMejores10=0;
+            double sumaFitnessMejores20=0;
+            double sumaTiempoEjec=0;
+            for(int j=0;j<cantRepeticiones;j++){
+                algMem.ejecutar(-1);
+                sumaFitnessMejorSol+= algMem.getFitnessMejorSolucion();
+                sumaFitnessMejores10+= algMem.getFitnessPromMejores10();
+                sumaFitnessMejores20+= algMem.getFitnessPromMejores20();
+                sumaTiempoEjec+= algMem.getTiempoEjecucion();
+            }
+            //System.out.println((sumaFitnessMejorSol/cantRepeticiones)+";"+(sumaFitnessMejores10/cantRepeticiones)+";"+
+            //        (sumaFitnessMejores20/cantRepeticiones)+";"+(sumaTiempoEjec/cantRepeticiones));
+            salida.append(sumaFitnessMejorSol / cantRepeticiones).append(";")
+                    .append(sumaFitnessMejores10 / cantRepeticiones).append(";")
+                    .append(sumaFitnessMejores20 / cantRepeticiones).append(";")
+                    .append(sumaTiempoEjec / cantRepeticiones);
+            System.out.println(salida);
+            i++;
+        }
+        System.out.println("-".repeat(20)+"FIN"+"-".repeat(20));
+    }
+
+    public static void imprimirCombParam(){
+        int[] numIter = {5000,10000};
+        int[] tamPob = {100,200};
+        float[] porcCromCruzados = {0.5f,0.75f};
+        float[] probMut = {0.5f,0.75f,1.0f};
+        float[] probBusq = {0.5f,0.6f};
+        float[] porcHijosIngresados = {0.75f,0.9f};
+        int[] cantVecinos = {40,50};
+        float porcIterEstanc = 0.3f;
+
+        for(int iter: numIter){
+            for(int tamano: tamPob){
+                for(float porcCruce: porcCromCruzados){
+                    for (float mut: probMut){
+                        for(float busq: probBusq){
+                            for(float porcSust: porcHijosIngresados){
+                                for(int numVec: cantVecinos){
+                                    System.out.println(iter+";"+tamano+";"+porcCruce+";"+
+                                            mut+";"+busq+";"+porcSust+";"+numVec+";"+porcIterEstanc+";1");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }

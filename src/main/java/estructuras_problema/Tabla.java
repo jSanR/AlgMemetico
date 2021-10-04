@@ -13,6 +13,7 @@ public class Tabla {
     private boolean isJoin;
 
     public Tabla(int id, int numFilas, int numColumnas, int numBytes, int[] cardColumnas) {
+        //Se usa para crear un objeto que represente una tabla normal
         this.id = id;
         this.numFilas = numFilas;
         this.numColumnas = numColumnas;
@@ -22,6 +23,7 @@ public class Tabla {
     }
 
     public Tabla(int id, int numFilas, int numColumnas, int numBytes, boolean isJoin, int[] cardColumnas) {
+        //Se usa para crear un objeto que representa un join
         this.id = id;
         this.numFilas = numFilas;
         this.numColumnas = numColumnas;

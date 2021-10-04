@@ -1,6 +1,7 @@
 package datos_param;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import estructuras_problema.Tabla;
@@ -18,13 +19,13 @@ public class DatosEntrada {
     private final int overheadTrans; //Overhead al realizar una transmisión cualquiera entre dos sitios (en milisegundos)
     private final float coefCom;
     private final float coefProc;
-    private final ParametrosAlgoritmo paramAlg;
+    private final ParametrosAlgoritmo[] paramAlg;
     private final int verbosityLevel;
 
     //Necesario para aplicar el patrón Singleton en esta clase
     private static DatosEntrada INSTANCIA;
 
-    public DatosEntrada(int numTablas, int numSitios, int numTotalColumnas, boolean[][] distTabSit, Tabla[] tablas, int[][] cardTablas, int[][] capTransSitios, int tamPromColumna, int overheadTrans, float coefCom, float coefProc, ParametrosAlgoritmo paramAlg, int verbosityLevel) {
+    public DatosEntrada(int numTablas, int numSitios, int numTotalColumnas, boolean[][] distTabSit, Tabla[] tablas, int[][] cardTablas, int[][] capTransSitios, int tamPromColumna, int overheadTrans, float coefCom, float coefProc, ParametrosAlgoritmo[] paramAlg, int verbosityLevel) {
         this.numTablas = numTablas;
         this.numSitios = numSitios;
         this.numTotalColumnas = numTotalColumnas;
@@ -72,7 +73,7 @@ public class DatosEntrada {
             int overheadTrans;
             float coefCom;
             float coefProc;
-            ParametrosAlgoritmo paramAlg;
+            ParametrosAlgoritmo[] combParamAlg;
             //Primera línea, datos del problema (numTab, numSit, numTotalCol, tamPromCol, overheadTransm, coefCom)
             String fila = csvReader.readLine();
             if(fila==null){
@@ -200,31 +201,46 @@ public class DatosEntrada {
                 throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+4) + ")");
             }
             //Sección de parámetros de ejecución del algoritmo
-            fila = csvReader.readLine();
-            if(fila==null){
-                throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas*2+numSitios+5) + ")");
+            ArrayList<ParametrosAlgoritmo> combinacionesParam = new ArrayList<>();
+            int contadorCombinaciones = 0;
+            int verbosityLevel=-1;
+            while(true) {
+                fila = csvReader.readLine();
+                if (fila == null) {
+                    if(contadorCombinaciones==0)
+                        throw new IOException("ERROR: El archivo de datos está incompleto (líneas leídas: " + (numTablas * 2 + numSitios + 5 + contadorCombinaciones) + ")");
+                    else break;
+                }
+                datos = fila.split(separadorCsv);
+                if (datos.length != 9 || datos[0].equals("-")) {
+                    throw new IOException("ERROR: Archivo de datos - Número incorrecto de parámetros de ejecución del algoritmo (linea " + (numTablas * 2 + numSitios + 6 + contadorCombinaciones) + ")");
+                }
+                int numIter = Integer.parseInt(datos[0]);
+                int tamPob = Integer.parseInt(datos[1]);
+                float porcCruce = Float.parseFloat(datos[2]);
+                float probMut = Float.parseFloat(datos[3]);
+                float probBusq = Float.parseFloat(datos[4]);
+                float porcHijos = Float.parseFloat(datos[5]);
+                int cantVecinosEval = Integer.parseInt(datos[6]);
+                float porcIterEstanc = Float.parseFloat(datos[7]);
+                if(contadorCombinaciones==0) verbosityLevel = Integer.parseInt(datos[8]);
+                if (numIter <= 0 || tamPob <= 0 || porcCruce > 1 || probMut > 1 || probBusq > 1
+                        || porcHijos > 1 || cantVecinosEval <= 0 || porcIterEstanc > 1) {
+                    throw new IOException("ERROR: Datos inválidos en la sección de parámetros de ejecución del algoritmo");
+                }
+                ParametrosAlgoritmo paramAlg = new ParametrosAlgoritmo(numIter, tamPob, porcCruce, probMut, probBusq, porcHijos, cantVecinosEval, porcIterEstanc);
+                combinacionesParam.add(paramAlg);
+                contadorCombinaciones++;
             }
-            datos = fila.split(separadorCsv);
-            if(datos.length!=9 || datos[0].equals("-")){
-                throw new IOException("ERROR: Archivo de datos - Número incorrecto de parámetros de ejecución del algoritmo (linea " + (numTablas*2+numSitios+6) + ")");
+            combParamAlg = new ParametrosAlgoritmo[combinacionesParam.size()];
+            int indiceParam = 0;
+            for(ParametrosAlgoritmo param: combinacionesParam){
+                combParamAlg[indiceParam] = param;
+                indiceParam++;
             }
-            int numIter = Integer.parseInt(datos[0]);
-            int tamPob = Integer.parseInt(datos[1]);
-            float porcCruce = Float.parseFloat(datos[2]);
-            float probMut = Float.parseFloat(datos[3]);
-            float probBusq = Float.parseFloat(datos[4]);
-            float porcHijos = Float.parseFloat(datos[5]);
-            int cantVecinosEval = Integer.parseInt(datos[6]);
-            float porcIterEstanc = Float.parseFloat(datos[7]);
-            int verbosityLevel = Integer.parseInt(datos[8]);
-            if(numIter<=0 || tamPob <=0 || porcCruce >1 || probMut >1 || probBusq > 1
-                    || porcHijos > 1 || cantVecinosEval <=0 || porcIterEstanc >1){
-                throw new IOException("ERROR: Datos inválidos en la sección de parámetros de ejecución del algoritmo");
-            }
-            paramAlg = new ParametrosAlgoritmo(numIter,tamPob,porcCruce,probMut,probBusq, porcHijos, cantVecinosEval, porcIterEstanc);
             DatosEntrada datosEntrada =
                     new DatosEntrada(numTablas,numSitios,numTotalColumnas,distTabSit,tablas,cardTablas,
-                            capTrans,tamPromColumna,overheadTrans,coefCom,coefProc,paramAlg, verbosityLevel);
+                            capTrans,tamPromColumna,overheadTrans,coefCom,coefProc,combParamAlg, verbosityLevel);
             return datosEntrada;
         }catch (NumberFormatException | IOException ex){
             System.err.println(ex.getMessage());
@@ -278,7 +294,7 @@ public class DatosEntrada {
         return coefProc;
     }
 
-    public ParametrosAlgoritmo getParamAlg() {
+    public ParametrosAlgoritmo[] getParamAlg() {
         return paramAlg;
     }
 
@@ -299,7 +315,7 @@ public class DatosEntrada {
                 ", overheadTrans=" + overheadTrans +
                 ", coefCom=" + coefCom +
                 ", coefProc=" + coefProc +
-                ", paramAlg=" + paramAlg +
+                ", paramAlg=" + paramAlg[0] +
                 ", verbosityLevel=" + verbosityLevel +
                 '}';
     }
